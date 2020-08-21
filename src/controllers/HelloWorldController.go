@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"appstud.com/github-core/src/models"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,7 +11,6 @@ func handle(c *gin.Context) {
 	})
 }
 
-// HelloWorldController - Route controller
 func HelloWorldController(engine *gin.Engine) {
 	engine.GET("/api/hello", handle)
 }

@@ -8,25 +8,26 @@ import (
 
 var usersStore []models.UserRegistered
 
-func GetUserIfExists(username string) (bool, error) {
-	if len(usersStore) > 0 {
+func GetUserIfExists(username string) bool {
+	usersStoredCount := len(usersStore)
+	if usersStoredCount > 0 {
 		sort.Slice(usersStore, func(i, j int) bool {
 			return usersStore[i].Username <= usersStore[j].Username
 		})
 
-		idx := sort.Search(len(usersStore), func(i int) bool {
-			return string(usersStore[i].Username) >= username
+		idx := sort.Search(usersStoredCount, func(i int) bool {
+			return (usersStore[i].Username) == username
 		})
 
-		if usersStore[idx].Username == username {
+		if idx < usersStoredCount && usersStore[idx].Username == username {
 			fmt.Println("Found:", idx, usersStore[idx])
-			return true, nil
+			return true
 		} else {
 			fmt.Println("Found noting: ", idx)
 		}
 	}
 
-	return false, nil
+	return false
 }
 
 func AddUser(username string, password string) models.UserRegistered {
@@ -37,4 +38,8 @@ func AddUser(username string, password string) models.UserRegistered {
 	usersStore = append(usersStore, newUser)
 
 	return newUser
+}
+
+func GetAllUsers() []models.UserRegistered {
+	return usersStore
 }
