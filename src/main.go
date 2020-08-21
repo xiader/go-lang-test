@@ -10,5 +10,6 @@ func main() {
 	controllers.HelloWorldController(r)
 	controllers.HealthCheckController(r)
 	controllers.EasterEggController(r)
+	controllers.UserController(r)
 	r.Run()
 }
