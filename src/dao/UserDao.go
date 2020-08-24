@@ -8,6 +8,7 @@ import (
 )
 
 var usersStore []models.UserRegistered
+var usersLoggedIn = make(map[string]models.UserRegistered)
 
 func GetUserIfExists(username string) bool {
 	usersStoredCount := len(usersStore)
@@ -68,4 +69,17 @@ func getUserByUsername(username string) models.UserRegistered {
 	}
 
 	return empty
+}
+
+func AddToken2User(token string, registered models.UserRegistered) {
+	usersLoggedIn[token] = registered
+}
+
+func GetActiveUsersByToken(token string) (models.UserRegistered, error) {
+	userByToken, ok := usersLoggedIn[token]
+	if ok == false {
+		return userByToken, errors.New("no users active by token " + token)
+	}
+
+	return userByToken, nil
 }

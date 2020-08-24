@@ -7,8 +7,8 @@ import (
 	"errors"
 )
 
-func RegisterUser(username string, password string) (models.SuccessfulRegistrationResponse, error) {
-	var user models.SuccessfulRegistrationResponse
+func RegisterUser(username string, password string) (models.UsernameTokenResponse, error) {
+	var user models.UsernameTokenResponse
 	if username == "" || password == "" {
 		return user, errors.New("please check your username and password")
 	}
@@ -19,7 +19,7 @@ func RegisterUser(username string, password string) (models.SuccessfulRegistrati
 	var userToken = util.GenerateRandomString()
 	dao.AddUser(username, password)
 
-	return models.SuccessfulRegistrationResponse{
+	return models.UsernameTokenResponse{
 		Username: username,
 		Token:    userToken,
 	}, nil
@@ -34,8 +34,9 @@ func GetAllUsers() []models.UsernameResponse {
 
 	return allUsernames
 }
-func LoginUser(username string, password string) (models.SuccessfulRegistrationResponse, error) {
-	var user models.SuccessfulRegistrationResponse
+
+func LoginUser(username string, password string) (models.UsernameTokenResponse, error) {
+	var user models.UsernameTokenResponse
 	if username == "" || password == "" {
 		return user, errors.New("please check your username and password")
 	}
@@ -44,9 +45,25 @@ func LoginUser(username string, password string) (models.SuccessfulRegistrationR
 		return user, err
 	}
 	var userToken = util.GenerateRandomString()
-	user = models.SuccessfulRegistrationResponse{
+	dao.AddToken2User(userToken, authenticatedUser)
+	user = models.UsernameTokenResponse{
 		Username: authenticatedUser.Username,
 		Token:    userToken,
 	}
+
+	return user, nil
+}
+
+func GetConnectedUser(token string) (models.UsernameResponse, error) {
+	var user models.UsernameResponse
+	if token == "" {
+		return user, errors.New("no token found in a request")
+	}
+	var loggedInUser, err = dao.GetActiveUsersByToken(token)
+	if err != nil {
+		return user, err
+	}
+	user = models.UsernameResponse{Username: loggedInUser.Username}
+
 	return user, nil
 }
