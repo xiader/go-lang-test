@@ -8,6 +8,7 @@ import (
 func UserController(engine *gin.Engine) {
 	engine.GET("/api/users/register", handleRegisterUser)
 	engine.GET("/api/users", handleGetAllUsers)
+	engine.GET("/api/users/login", handleLoginUser)
 }
 
 func handleRegisterUser(c *gin.Context) {
@@ -23,4 +24,16 @@ func handleRegisterUser(c *gin.Context) {
 
 func handleGetAllUsers(c *gin.Context) {
 	c.JSON(200, service.GetAllUsers())
+}
+
+func handleLoginUser(c *gin.Context) {
+	var username = c.Request.URL.Query().Get("username")
+	var password = c.Request.URL.Query().Get("password")
+	var user, err = service.LoginUser(username, password)
+	if err == nil {
+		c.JSON(200, user)
+	} else {
+		c.JSON(404, gin.H{"error message": err.Error()})
+	}
+
 }

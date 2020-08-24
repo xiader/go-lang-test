@@ -10,8 +10,7 @@ const charset = "abcdefghijklmnopqrstuvwxyz" +
 
 const tokenLength int = 32
 
-var seededRand *rand.Rand = rand.New(
-	rand.NewSource(time.Now().UnixNano()))
+var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func StringWithCharset(length int, charset string) string {
 	b := make([]byte, length)

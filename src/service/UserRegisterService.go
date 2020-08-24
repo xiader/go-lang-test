@@ -34,3 +34,19 @@ func GetAllUsers() []models.UsernameResponse {
 
 	return allUsernames
 }
+func LoginUser(username string, password string) (models.SuccessfulRegistrationResponse, error) {
+	var user models.SuccessfulRegistrationResponse
+	if username == "" || password == "" {
+		return user, errors.New("please check your username and password")
+	}
+	var authenticatedUser, err = dao.AuthenticateUser(username, password)
+	if err != nil {
+		return user, err
+	}
+	var userToken = util.GenerateRandomString()
+	user = models.SuccessfulRegistrationResponse{
+		Username: authenticatedUser.Username,
+		Token:    userToken,
+	}
+	return user, nil
+}

@@ -2,6 +2,7 @@ package dao
 
 import (
 	"appstud.com/github-core/src/models"
+	"errors"
 	"fmt"
 	"sort"
 )
@@ -42,4 +43,29 @@ func AddUser(username string, password string) models.UserRegistered {
 
 func GetAllUsers() []models.UserRegistered {
 	return usersStore
+}
+
+func AuthenticateUser(username string, password string) (models.UserRegistered, error) {
+	var existingUser = getUserByUsername(username)
+	//check on existence
+	if (models.UserRegistered{}) == existingUser {
+		return existingUser, errors.New("user is not registered")
+	}
+	if existingUser.Password != password {
+		return existingUser, errors.New("password is invalid")
+	}
+
+	return existingUser, nil
+}
+
+func getUserByUsername(username string) models.UserRegistered {
+	var empty models.UserRegistered
+	index := sort.Search(len(usersStore), func(i int) bool {
+		return (usersStore[i].Username) == username
+	})
+	if index < len(usersStore) && usersStore[index].Username == username {
+		empty = usersStore[index]
+	}
+
+	return empty
 }
