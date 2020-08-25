@@ -11,5 +11,6 @@ func main() {
 	controllers.HealthCheckController(r)
 	controllers.EasterEggController(r)
 	controllers.UserController(r)
+	controllers.GitHubController(r)
 	r.Run()
 }
