@@ -10,9 +10,10 @@ func GitHubController(engine *gin.Engine) {
 }
 
 func handleGitHubFeed(c *gin.Context) {
-	var feed, err = service.GetGitHubFeed()
+	var username = c.Request.URL.Query().Get("username")
+	var feed, err = service.GetGitHubFeedForUser(username)
 	if err != nil {
-		c.JSON(400, err.Error())
+		c.JSON(400, gin.H{"error message": err.Error()})
 	} else {
 		c.JSON(200, feed)
 	}
