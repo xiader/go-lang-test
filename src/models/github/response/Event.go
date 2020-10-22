@@ -1,9 +1,9 @@
 package response
 
 type Event struct {
-	Type  string `json:"type"`
-	Actor Actor  `json:"actor"`
-	Repo  Repo   `json:"repo"`
+	Type  string    `json:"type"`
+	Actor Actor     `json:"actor"`
+	Repo  EventRepo `json:"repo"`
 }
 
 type Actor struct {
@@ -11,7 +11,7 @@ type Actor struct {
 	Login string `json:"login"`
 }
 
-type Repo struct {
+type EventRepo struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
 }

@@ -6,7 +6,7 @@ type Event struct {
 	Id        string                 `json:"id"`
 	Type      string                 `json:"type"`
 	Actor     Actor                  `json:"actor"`
-	Repo      Repo                   `json:"repo"`
+	Repo      EventRepo              `json:"repo"`
 	Payload   map[string]interface{} `json:"payload"`
 	Public    bool                   `json:"public"`
 	CreatedAt time.Time              `json:"created_at"`
@@ -21,7 +21,7 @@ type Actor struct {
 	AvatarURL    string `json:"avatar_url"`
 }
 
-type Repo struct {
+type EventRepo struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
 	URL  string `json:"url"`

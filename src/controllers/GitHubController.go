@@ -7,6 +7,7 @@ import (
 
 func GitHubController(engine *gin.Engine) {
 	engine.GET("/api/github/feed", handleGitHubFeed)
+	engine.GET("/api/github/users/:actor_login", handleGitHubPublicUserWithLogin)
 }
 
 func handleGitHubFeed(c *gin.Context) {
@@ -16,5 +17,15 @@ func handleGitHubFeed(c *gin.Context) {
 		c.JSON(400, gin.H{"error message": err.Error()})
 	} else {
 		c.JSON(200, feed)
+	}
+}
+
+func handleGitHubPublicUserWithLogin(c *gin.Context) {
+	var username = c.Param("actor_login")
+	var user, err = service.GetGitHubPublicUserInfo(username)
+	if err != nil {
+		c.JSON(400, gin.H{"error message": err.Error()})
+	} else {
+		c.JSON(200, user)
 	}
 }

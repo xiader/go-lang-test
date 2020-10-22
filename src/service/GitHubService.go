@@ -9,13 +9,197 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
-const githubGetAllEvents = "https://api.github.com/events"
-const githubGetAllEventsByUser = "https://api.github.com/users/%s/events"
+const githubGetAllEvents string = "https://api.github.com/events"
+const githubGetAllEventsByUser string = "https://api.github.com/users/%s/events"
+const gitHubGetUserInfo string = "https://api.github.com/users/"
 
 var client = &http.Client{Timeout: time.Minute}
+
+func GetGitHubPublicUserInfo(username string) (interface{}, error) {
+	var gitHubUserResponse response.User
+	if username == "" {
+		return gitHubUserResponse, errors.New("please check username in path params")
+	}
+	var userInfoRequest = gitHubGetUserInfo + username
+
+	var publicGitHubUserUser, userError = getGitHubPublicUser(userInfoRequest)
+	if userError != nil {
+		return nil, userError
+	}
+	user := publicGitHubUserUser.(model.User)
+	var publicRepos, reposError = getGitHubPublicUserRepos(user.ReposURL)
+	var publicGists, gistsError = getGitHubPublicUserGists(user.GistsURL)
+	var followers, followersError = getGitHubUserFollowers(user.FollowersURL)
+	var following, followingError = getGitHubUserFollowing(user.FollowingURL)
+
+	if reposError != nil {
+		return nil, reposError
+	}
+	if gistsError != nil {
+		return nil, gistsError
+	}
+	if followersError != nil {
+		return nil, followersError
+	}
+	if followingError != nil {
+		return nil, followingError
+	}
+
+	//repositories := publicRepos.([]response.PublicRepo)
+	//gists := publicGists.([]response.PublicGist)
+	//userFollowers := followers.([]response.BriefUserInfo)
+	//userFollowing := following.([]response.BriefUserInfo)
+
+	var details = response.Details{
+		PublicRepos: publicRepos.([]response.PublicRepo),
+		PublicGists: publicGists.([]response.PublicGist),
+		Followers:   followers.([]response.BriefUserInfo),
+		Following:   following.([]response.BriefUserInfo),
+	}
+	gitHubUserResponse = response.User{
+		ID:      user.ID,
+		Login:   user.Login,
+		Avatar:  user.AvatarURL,
+		Details: details,
+	}
+
+	return gitHubUserResponse, nil
+}
+
+func getGitHubPublicUser(getGitHubUserInfoURL string) (interface{}, error) {
+	var responseBody, requestError = handleResponse(getGitHubUserInfoURL)
+	if requestError != nil {
+		return nil, requestError
+	}
+
+	var gitHubUser model.User
+	unmarshallError := parseResponseBodyIntoModel(responseBody.([]byte), &gitHubUser)
+
+	if unmarshallError != nil {
+		return nil, unmarshallError
+	}
+
+	return gitHubUser, nil
+}
+
+func handleResponse(url string) (interface{}, error) {
+	var responseBody, requestError = getResponseBody(url)
+	var serverErrorResponse model.ErrorMessage
+	_ = parseResponseBodyIntoModel(responseBody, &serverErrorResponse)
+	if serverErrorResponse != (model.ErrorMessage{}) {
+
+		return nil, errors.New(serverErrorResponse.Message + "; documentation URL: " + serverErrorResponse.DocumentationURL)
+	}
+
+	return responseBody, requestError
+}
+
+func getGitHubUserFollowing(userFollowingURL string) (interface{}, error) {
+	urlGetAllFollowing := userFollowingURL[:strings.IndexByte(userFollowingURL, '{')]
+	var responseBody, requestError = handleResponse(urlGetAllFollowing)
+	if requestError != nil {
+		return nil, requestError
+	}
+
+	var gitHubUserFollowing []model.User
+	unmarshallError := parseResponseBodyIntoModel(responseBody.([]byte), &gitHubUserFollowing)
+	if unmarshallError != nil {
+		unmarshalErrorWithCustomMessage := fmt.Errorf("%w; Custom message: error in parsing user gists", unmarshallError)
+		return nil, unmarshalErrorWithCustomMessage
+	}
+
+	var following = make([]response.BriefUserInfo, len(gitHubUserFollowing))
+	for i, element := range gitHubUserFollowing {
+		following[i] = response.BriefUserInfo{
+			Login:  element.Login,
+			ID:     element.ID,
+			Url:    element.URL,
+			Avatar: element.AvatarURL,
+		}
+	}
+
+	return following, nil
+}
+
+func getGitHubUserFollowers(userFollowersURL string) (interface{}, error) {
+	var responseBody, requestError = handleResponse(userFollowersURL)
+	if requestError != nil {
+		return nil, requestError
+	}
+
+	var gitHubUserFollowers []model.User
+	unmarshallError := parseResponseBodyIntoModel(responseBody.([]byte), &gitHubUserFollowers)
+	if unmarshallError != nil {
+		unmarshalErrorWithCustomMessage := fmt.Errorf("%w; Custom message: error in parsing user gists", unmarshallError)
+		return nil, unmarshalErrorWithCustomMessage
+	}
+
+	var followers = make([]response.BriefUserInfo, len(gitHubUserFollowers))
+	for i, element := range gitHubUserFollowers {
+		followers[i] = response.BriefUserInfo{
+			Login:  element.Login,
+			ID:     element.ID,
+			Url:    element.URL,
+			Avatar: element.AvatarURL,
+		}
+	}
+
+	return followers, nil
+}
+
+func getGitHubPublicUserGists(userGistsURL string) (interface{}, error) {
+	urlGetAllGists := userGistsURL[:strings.IndexByte(userGistsURL, '{')]
+	var responseBody, requestError = handleResponse(urlGetAllGists)
+	if requestError != nil {
+		return nil, requestError
+	}
+
+	var gitHubUserGists []model.Gist
+	unmarshallError := parseResponseBodyIntoModel(responseBody.([]byte), &gitHubUserGists)
+	if unmarshallError != nil {
+		unmarshalErrorWithCustomMessage := fmt.Errorf("%w; Custom message: error in parsing user gists", unmarshallError)
+		return nil, unmarshalErrorWithCustomMessage
+	}
+
+	var gists = make([]response.PublicGist, len(gitHubUserGists))
+	for i, element := range gitHubUserGists {
+		gists[i] = response.PublicGist{
+			ID:  element.ID,
+			Url: element.URL,
+		}
+	}
+
+	return gists, nil
+}
+
+func getGitHubPublicUserRepos(userReposURL string) (interface{}, error) {
+	var responseBody, requestError = handleResponse(userReposURL)
+	if requestError != nil {
+		return nil, requestError
+	}
+
+	var gitHubUserRepos []model.Repo
+	unmarshallError := parseResponseBodyIntoModel(responseBody.([]byte), &gitHubUserRepos)
+
+	if unmarshallError != nil {
+		unmarshalErrorWithCustomMessage := fmt.Errorf("%w; Custom message: error in parsing user repositories", unmarshallError)
+		return nil, unmarshalErrorWithCustomMessage
+	}
+
+	var repos = make([]response.PublicRepo, len(gitHubUserRepos))
+	for i, element := range gitHubUserRepos {
+		repos[i] = response.PublicRepo{
+			Name: element.Name,
+			Url:  element.URL,
+		}
+	}
+
+	return repos, nil
+}
 
 func GetGitHubFeed() ([]response.Event, error) {
 	var eventsModel []model.Event
@@ -79,7 +263,7 @@ func mapGitHubEventModel2CustomServerEventResponse(inputModel model.Event) respo
 			Id:    inputModel.Actor.Id,
 			Login: inputModel.Actor.Login,
 		},
-		Repo: response.Repo{
+		Repo: response.EventRepo{
 			Id:   inputModel.Repo.Id,
 			Name: inputModel.Repo.Name,
 		},
